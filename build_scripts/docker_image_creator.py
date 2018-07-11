@@ -23,10 +23,10 @@ def create_docker_image(binary_path, processor, framework_version, python_versio
     """
     # Initialize commonly used variables
     py_v = 'py{}'.format(python_version.split('.')[0]) # i.e. py2
-    base_docker_path = '{}/../docker/base/Dockerfile.{}'.format(PATH_TO_SCRIPT, processor)
+    base_docker_path = '{}/../docker/base'.format(PATH_TO_SCRIPT, processor)
     final_docker_path = '{}/../docker/{}/final/{}'.format(PATH_TO_SCRIPT, framework_version, py_v)
 
-    # Get binary file
+    # Get binary file - right now, it does not support adding a wheel file in
     if binary_path != 'None':
         print('Getting binary...')
         binary_filename = binary_path.split('/')[-1]
@@ -39,14 +39,11 @@ def create_docker_image(binary_path, processor, framework_version, python_versio
     # Build base image
     print('Building base image...')
     image_name = 'chainer-base:{}-{}-{}'.format(framework_version, processor,  py_v)
-    subprocess.call([DOCKER, 'build', '-t', image_name, '-f', base_docker_path, '.'], cwd='{}/..'.format(PATH_TO_SCRIPT))
+    subprocess.call([DOCKER, 'build', '-t', image_name, '-f', '{}/Dockerfile.{}'.format(base_docker_path, processor), '.'], cwd='{}'.format(base_docker_path))
 
     #  Build final image
     print('Building final image...')
-    subprocess.call(['python', 'setup.py', 'sdist'], cwd='{}/..'.format(PATH_TO_SCRIPT))
-    output_file = glob.glob('{}/../dist/sagemaker-chainer-container-*.tar.gz'.format(PATH_TO_SCRIPT))[0]
-    output_filename = output_file.split('/')[-1]
-    shutil.copyfile(output_file, '{}/{}'.format(final_docker_path, output_filename))
+    subprocess.call(['python', 'setup.py', 'bdist_wheel'], cwd='{}/..'.format(PATH_TO_SCRIPT))
 
     final_image_repository = final_image_repository if final_image_repository else 'preprod-chainer'
     final_image_tags = final_image_tags if final_image_tags else ['{}-{}-{}'.format(framework_version, processor, py_v)]
@@ -55,8 +52,9 @@ def create_docker_image(binary_path, processor, framework_version, python_versio
         command_list.append('-t')
         command_list.append('{}:{}'.format(final_image_repository, tag))
 
-    command_list.extend(['-f', 'Dockerfile.{}'.format(processor), '.'])
-    subprocess.call(command_list, cwd=final_docker_path)
+
+    command_list.extend(['-f', '{}/Dockerfile.{}'.format(final_docker_path, processor), '.'])
+    subprocess.call(command_list, cwd='{}/..'.format(PATH_TO_SCRIPT))
 
 if __name__ == '__main__':
     # Parse command line options
