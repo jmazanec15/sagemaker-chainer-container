@@ -26,7 +26,7 @@ def build_docker_image(framework_version, python_version, processor, binary_path
     """
     # Initialize commonly used variables
     py_v = 'py{}'.format(python_version.split('.')[0]) # i.e. py2
-    base_docker_path = os.path.join(main_directory_path, 'docker', framework_version, 'base')
+    base_docker_path = os.path.join(main_directory_path, 'docker', 'base')
     final_docker_path = os.path.join(main_directory_path, 'docker', framework_version, 'final', py_v)
 
     # Get binary file - right now, it does not support adding a wheel file in
